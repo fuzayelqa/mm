@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campaign Name Extractor & Headline Builder</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar styling for a premium feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-indigo-500 to-violet-500 p-2 rounded-xl shadow-md shadow-indigo-500/10">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Campaign Engine</h1>
+                    <p class="text-xs text-slate-400 font-medium">Extract names & draft search ad headlines instantly</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button id="loadExample" class="text-xs font-semibold px-3.5 py-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-800 text-indigo-400 rounded-lg transition-all duration-200 border border-slate-700/50">
+                    Load Example Data
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
+        
+        <!-- STEP 1: CAMPAIGN EXTRACTION -->
+        <section class="bg-slate-900/30 border border-slate-800 rounded-3xl p-6 shadow-xl backdrop-blur-sm">
+            <div class="flex items-center justify-between flex-wrap gap-4 mb-6">
+                <div class="flex items-center space-x-2.5">
+                    <span class="bg-indigo-500/10 text-indigo-400 font-bold text-xs px-2.5 py-1 rounded-full border border-indigo-500/20">Step 1</span>
+                    <h2 class="text-lg font-bold text-slate-100">Extract Campaign Identifiers</h2>
+                </div>
+                <!-- Strip sarb- prefix configuration checkbox -->
+                <div class="flex items-center space-x-2 bg-slate-950/60 px-3.5 py-2 rounded-xl border border-slate-800/60">
+                    <input id="cfgStripSarb" type="checkbox" checked class="w-4 h-4 text-indigo-600 bg-slate-900 border-slate-700 rounded focus:ring-indigo-500 focus:ring-offset-slate-950 focus:ring-2 cursor-pointer">
+                    <label for="cfgStripSarb" class="text-xs text-slate-300 font-semibold cursor-pointer select-none">
+                        Strip <code class="bg-slate-800 px-1 py-0.5 rounded text-[10px] text-indigo-300 font-mono">sarb-</code> prefix
+                    </label>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Input Area -->
+                <div class="flex flex-col h-[320px]">
+                    <div class="flex items-center justify-between mb-2">
+                        <label for="rawInput" class="text-xs font-semibold text-slate-400 tracking-wider uppercase flex items-center gap-2">
+                            <span>Raw Data Feed</span>
+                            <span id="inputCount" class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-medium">0 rows</span>
+                        </label>
+                        <button id="clearInput" class="text-xs text-rose-400 hover:text-rose-300 font-medium transition-colors">
+                            Clear Data
+                        </button>
+                    </div>
+                    <div class="relative flex-grow group">
+                        <textarea 
+                            id="rawInput" 
+                            class="w-full h-full bg-slate-950/70 border border-slate-800 hover:border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-2xl p-4 text-xs font-mono text-slate-300 outline-none resize-none transition-all duration-200 placeholder:text-slate-600"
+                            placeholder="Paste your raw campaign tracks here...&#10;e.g., sarb_m_ww_shari-lipi_sarb-anolipi_32100877_sarb-architecture-online-jobs_all_purchase..."
+                        ></textarea>
+                    </div>
+                </div>
+
+                <!-- Extraction Output Area -->
+                <div class="flex flex-col h-[320px]">
+                    <div class="flex items-center justify-between mb-2">
+                        <label for="cleanOutput" class="text-xs font-semibold text-slate-400 tracking-wider uppercase flex items-center gap-2">
+                            <span>Extracted Campaign Names</span>
+                            <span id="outputCount" class="text-[10px] bg-indigo-950 text-indigo-400 border border-indigo-900 px-2.5 py-0.5 rounded-full font-medium">0 items</span>
+                        </label>
+                        <div class="flex items-center space-x-2">
+                            <button id="copyExtractBtn" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors" disabled>Copy</button>
+                        </div>
+                    </div>
+                    <div class="relative flex-grow">
+                        <textarea 
+                            id="cleanOutput" 
+                            class="w-full h-full bg-slate-950/40 border border-slate-800 rounded-2xl p-4 text-xs font-mono text-emerald-400 outline-none resize-none transition-all duration-200"
+                            placeholder="Clean list will update here..."
+                        ></textarea>
+                        
+                        <!-- Inline interactive prompt overlay -->
+                        <div id="processOverlay" class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center gap-3 transition-all duration-300 opacity-0 pointer-events-none">
+                            <p class="text-xs font-semibold text-slate-300">Ready to pull clean labels</p>
+                            <button id="processBtn" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-lg transition-all duration-150 transform active:scale-95">
+                                Run Extraction Fast
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 2: HEADLINE CREATOR -->
+        <section class="bg-slate-900/30 border border-slate-800 rounded-3xl p-6 shadow-xl backdrop-blur-sm">
+            <div class="flex items-center space-x-2.5 mb-6">
+                <span class="bg-violet-500/10 text-violet-400 font-bold text-xs px-2.5 py-1 rounded-full border border-violet-500/20">Step 2</span>
+                <h2 class="text-lg font-bold text-slate-100">Ad Headline Builder Workspace</h2>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Settings & Customizations (Column 1) -->
+                <div class="space-y-5 bg-slate-900/60 p-5 rounded-2xl border border-slate-800">
+                    <h3 class="text-xs font-semibold text-slate-400 tracking-wider uppercase mb-1">Configuration</h3>
+                    
+                    <!-- Clean Hyphens -->
+                    <div class="flex items-center justify-between p-2.5 bg-slate-950/50 rounded-xl border border-slate-800/40">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-200">Remove Hyphens</p>
+                            <p class="text-[10px] text-slate-500">Replace dash with space</p>
+                        </div>
+                        <input id="cfgReplaceHyphens" type="checkbox" checked class="w-4 h-4 text-indigo-600 bg-slate-900 border-slate-700 rounded focus:ring-indigo-500 focus:ring-offset-slate-900 focus:ring-2 cursor-pointer">
+                    </div>
+
+                    <!-- Capitalizations -->
+                    <div class="p-2.5 bg-slate-950/50 rounded-xl border border-slate-800/40 space-y-2">
+                        <label class="text-xs font-semibold text-slate-200 block">Text Capitalization</label>
+                        <select id="cfgCasing" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-300 focus:border-indigo-500 focus:outline-none cursor-pointer">
+                            <option value="title">Title Case (Headline Style)</option>
+                            <option value="sentence">Sentence case</option>
+                            <option value="upper">UPPERCASE</option>
+                            <option value="none">No Change</option>
+                        </select>
+                    </div>
+
+                    <!-- Dynamic Wildcard Templates -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <label class="text-xs font-semibold text-slate-200">Headline Templates</label>
+                            <span class="text-[9px] text-slate-500 font-mono">use {campaign}</span>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-mono text-slate-500 w-5">H1</span>
+                                <input id="tpl1" type="text" value="{campaign}" class="flex-grow bg-slate-950/50 border border-slate-800 focus:border-indigo-500 text-xs rounded-lg px-2.5 py-1.5 text-slate-300 outline-none">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-mono text-slate-500 w-5">H2</span>
+                                <input id="tpl2" type="text" value="Buy {campaign}" class="flex-grow bg-slate-950/50 border border-slate-800 focus:border-indigo-500 text-xs rounded-lg px-2.5 py-1.5 text-slate-300 outline-none">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-mono text-slate-500 w-5">H3</span>
+                                <input id="tpl3" type="text" value="Best {campaign} Online" class="flex-grow bg-slate-950/50 border border-slate-800 focus:border-indigo-500 text-xs rounded-lg px-2.5 py-1.5 text-slate-300 outline-none">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Headlines Outputs (Column 2 & 3) -->
+                <div class="lg:col-span-2 flex flex-col h-full min-h-[380px]">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center space-x-3">
+                            <h3 class="text-xs font-semibold text-slate-400 tracking-wider uppercase">Active Live Output</h3>
+                            <div class="flex space-x-1 bg-slate-900 p-0.5 rounded-lg border border-slate-800">
+                                <button id="viewCleanText" class="px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all bg-slate-800 text-slate-200">Raw Text Output</button>
+                                <button id="viewInspector" class="px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all text-slate-500 hover:text-slate-300">Google Ads Inspector</button>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <button id="dlHeadlinesBtn" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors" disabled>Export .txt</button>
+                            <span class="text-slate-800">|</span>
+                            <button id="copyHeadlinesBtn" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors" disabled>Copy All Headlines</button>
+                        </div>
+                    </div>
+
+                    <!-- RAW TEXT VIEW -->
+                    <div id="panelCleanText" class="flex-grow relative h-full">
+                        <textarea 
+                            id="headlinesOutput" 
+                            class="w-full h-full min-h-[300px] bg-slate-950/40 border border-slate-800 rounded-2xl p-4 text-xs font-mono text-indigo-300 outline-none resize-none transition-all duration-200"
+                            placeholder="Drafted headlines will appear here based on extracted campaign names and templates..."
+                        ></textarea>
+                    </div>
+
+                    <!-- DETAILED GOOGLE ADS ADVISOR VIEW -->
+                    <div id="panelInspector" class="hidden flex-grow border border-slate-800 bg-slate-950/40 rounded-2xl p-4 overflow-y-auto max-h-[320px] space-y-2">
+                        <div class="flex justify-between text-[10px] text-slate-500 uppercase font-mono border-b border-slate-800 pb-2 mb-2 sticky top-0 bg-slate-950/90 z-10 py-1">
+                            <span>Headline Generated</span>
+                            <span>Char Length (Limit: 30)</span>
+                        </div>
+                        <div id="inspectorList" class="space-y-1 text-xs">
+                            <!-- Populated on runtime -->
+                            <p class="text-slate-500 text-center py-8">Generate headlines to view structural compliance alerts.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 border border-slate-800 text-slate-200 px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <span class="p-1 rounded-lg bg-emerald-500/15 text-emerald-400" id="toastIcon">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        </span>
+        <span class="text-sm font-medium" id="toastMessage">Done!</span>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 bg-slate-950 py-5 text-center text-xs text-slate-500">
+        <p>100% Client-side sandbox. All translations and conversions execute securely in your browser cache.</p>
+    </footer>
+
+    <!-- Logic Script -->
+    <script>
+        // Extraction Elements
+        const rawInput = document.getElementById('rawInput');
+        const cleanOutput = document.getElementById('cleanOutput');
+        const processOverlay = document.getElementById('processOverlay');
+        const processBtn = document.getElementById('processBtn');
+        const clearInput = document.getElementById('clearInput');
+        const loadExample = document.getElementById('loadExample');
+        const inputCount = document.getElementById('inputCount');
+        const outputCount = document.getElementById('outputCount');
+        const copyExtractBtn = document.getElementById('copyExtractBtn');
+        const cfgStripSarb = document.getElementById('cfgStripSarb');
+
+        // Headline Elements
+        const cfgReplaceHyphens = document.getElementById('cfgReplaceHyphens');
+        const cfgCasing = document.getElementById('cfgCasing');
+        const tpl1 = document.getElementById('tpl1');
+        const tpl2 = document.getElementById('tpl2');
+        const tpl3 = document.getElementById('tpl3');
+        const headlinesOutput = document.getElementById('headlinesOutput');
+        const viewCleanText = document.getElementById('viewCleanText');
+        const viewInspector = document.getElementById('viewInspector');
+        const panelCleanText = document.getElementById('panelCleanText');
+        const panelInspector = document.getElementById('panelInspector');
+        const inspectorList = document.getElementById('inspectorList');
+        const copyHeadlinesBtn = document.getElementById('copyHeadlinesBtn');
+        const dlHeadlinesBtn = document.getElementById('dlHeadlinesBtn');
+
+        // Toast Notification System
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+
+        function showNotification(message, success = true) {
+            toastMessage.textContent = message;
+            const iconContainer = document.getElementById('toastIcon');
+            if (success) {
+                iconContainer.className = "p-1 rounded-lg bg-emerald-500/15 text-emerald-400";
+                iconContainer.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+            } else {
+                iconContainer.className = "p-1 rounded-lg bg-rose-500/15 text-rose-400";
+                iconContainer.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+            }
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Title Casing utility
+        function toTitleCase(str) {
+            return str.replace(/\b[a-z]/g, function(char) {
+                return char.toUpperCase();
+            });
+        }
+
+        // Sentence Casing utility
+        function toSentenceCase(str) {
+            if (!str) return "";
+            return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+        }
+
+        // Main Extraction Loop
+        function runExtraction() {
+            const text = rawInput.value;
+            if (!text.trim()) {
+                cleanOutput.value = "";
+                headlinesOutput.value = "";
+                updateStats(0, 0);
+                toggleExtractActions(false);
+                toggleHeadlineActions(false);
+                return;
+            }
+
+            const lines = text.split('\n');
+            const extractedCampaigns = [];
+
+            for (let line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed) continue;
+
+                // Extraction regex matching ID block and extracting up to '_all'
+                const match = trimmed.match(/_(\d+)_([a-zA-Z0-9\-]+)_all/);
+                if (match) {
+                    let extractedName = match[2];
+                    // Strip sarb- prefix if checked
+                    if (cfgStripSarb.checked) {
+                        extractedName = extractedName.replace(/^sarb-/, '');
+                    }
+                    extractedCampaigns.push(extractedName);
+                }
+            }
+
+            cleanOutput.value = extractedCampaigns.join('\n');
+            updateStats(lines.filter(l => l.trim()).length, extractedCampaigns.length);
+            
+            if (extractedCampaigns.length > 0) {
+                toggleExtractActions(true);
+                generateHeadlines(extractedCampaigns);
+            } else {
+                toggleExtractActions(false);
+                toggleHeadlineActions(false);
+                showNotification("No compliant campaigns detected in feed.", false);
+            }
+
+            processOverlay.classList.add('opacity-0', 'pointer-events-none');
+        }
+
+        function updateStats(inputLines, outputCountValue) {
+            inputCount.textContent = `${inputLines} strings`;
+            outputCount.textContent = `${outputCountValue} campaigns`;
+        }
+
+        function toggleExtractActions(enable) {
+            if (enable) {
+                copyExtractBtn.removeAttribute('disabled');
+                copyExtractBtn.className = "text-xs text-indigo-400 hover:text-indigo-300 font-semibold transition-colors";
+            } else {
+                copyExtractBtn.setAttribute('disabled', 'true');
+                copyExtractBtn.className = "text-xs text-slate-600 cursor-not-allowed font-semibold";
+            }
+        }
+
+        function toggleHeadlineActions(enable) {
+            if (enable) {
+                copyHeadlinesBtn.removeAttribute('disabled');
+                dlHeadlinesBtn.removeAttribute('disabled');
+                copyHeadlinesBtn.className = "text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors";
+                dlHeadlinesBtn.className = "text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors";
+            } else {
+                copyHeadlinesBtn.setAttribute('disabled', 'true');
+                dlHeadlinesBtn.setAttribute('disabled', 'true');
+                copyHeadlinesBtn.className = "text-xs text-slate-600 cursor-not-allowed font-medium";
+                dlHeadlinesBtn.className = "text-xs text-slate-600 cursor-not-allowed font-medium";
+            }
+        }
+
+        // Live Headline Generator & Transformer Logic
+        function generateHeadlines(campaigns = null) {
+            // Pull dynamically if not provided explicitly
+            if (!campaigns) {
+                campaigns = cleanOutput.value.split('\n').filter(c => c.trim().length > 0);
+            }
+
+            if (campaigns.length === 0) {
+                headlinesOutput.value = "";
+                inspectorList.innerHTML = `<p class="text-slate-500 text-center py-8">Generate headlines to view structural compliance alerts.</p>`;
+                toggleHeadlineActions(false);
+                return;
+            }
+
+            const templates = [tpl1.value, tpl2.value, tpl3.value].filter(t => t.trim().length > 0);
+            const removeHyphens = cfgReplaceHyphens.checked;
+            const casing = cfgCasing.value;
+
+            let allGeneratedHeadlines = [];
+            let inspectorHTML = "";
+
+            campaigns.forEach((campaign) => {
+                // Step A: Format Core Identifier name
+                let formatted = campaign;
+                if (removeHyphens) {
+                    formatted = formatted.replace(/-/g, ' ');
+                }
+
+                // Step B: Capitalization Engine
+                if (casing === 'title') {
+                    formatted = toTitleCase(formatted);
+                } else if (casing === 'sentence') {
+                    formatted = toSentenceCase(formatted);
+                } else if (casing === 'upper') {
+                    formatted = formatted.toUpperCase();
+                }
+
+                // Step C: Build headlines across active template layers
+                templates.forEach((template) => {
+                    const headline = template.replace(/{campaign}/gi, formatted);
+                    allGeneratedHeadlines.push(headline);
+
+                    // Step D: Character compliance assessment
+                    const length = headline.length;
+                    const tooLong = length > 30;
+                    
+                    const badgeClass = tooLong 
+                        ? "bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold" 
+                        : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold";
+                    
+                    const borderStyle = tooLong
+                        ? "border-l-2 border-rose-500 bg-slate-900/40"
+                        : "border-l border-slate-800/40";
+
+                    inspectorHTML += `
+                        <div class="flex items-center justify-between p-2 rounded-xl ${borderStyle} gap-4">
+                            <span class="font-mono text-xs ${tooLong ? 'text-rose-300' : 'text-slate-300'} truncate">${headline}</span>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full ${badgeClass} shrink-0">
+                                ${length} / 30 ${tooLong ? '🛑 Too Long' : '✓ OK'}
+                            </span>
+                        </div>
+                    `;
+                });
+            });
+
+            // Write outputs to UI
+            headlinesOutput.value = allGeneratedHeadlines.join('\n');
+            inspectorList.innerHTML = inspectorHTML;
+            toggleHeadlineActions(allGeneratedHeadlines.length > 0);
+        }
+
+        // Active View toggles
+        viewCleanText.addEventListener('click', () => {
+            viewCleanText.className = "px-2.5 py-1 rounded-md text-[10px] font-semibold bg-slate-800 text-slate-200";
+            viewInspector.className = "px-2.5 py-1 rounded-md text-[10px] font-semibold text-slate-500 hover:text-slate-300";
+            panelCleanText.classList.remove('hidden');
+            panelInspector.classList.add('hidden');
+        });
+
+        viewInspector.addEventListener('click', () => {
+            viewInspector.className = "px-2.5 py-1 rounded-md text-[10px] font-semibold bg-slate-800 text-slate-200";
+            viewCleanText.className = "px-2.5 py-1 rounded-md text-[10px] font-semibold text-slate-500 hover:text-slate-300";
+            panelCleanText.classList.add('hidden');
+            panelInspector.classList.remove('hidden');
+        });
+
+        // Event Hookups for Extraction
+        rawInput.addEventListener('input', () => {
+            const hasText = rawInput.value.trim().length > 0;
+            if (hasText) {
+                processOverlay.classList.remove('opacity-0', 'pointer-events-none');
+            } else {
+                cleanOutput.value = "";
+                headlinesOutput.value = "";
+                updateStats(0, 0);
+                toggleExtractActions(false);
+                toggleHeadlineActions(false);
+                processOverlay.classList.add('opacity-0', 'pointer-events-none');
+            }
+        });
+
+        processBtn.addEventListener('click', runExtraction);
+
+        // Real-time rebuilds on config updates
+        cfgStripSarb.addEventListener('change', () => runExtraction());
+        cleanOutput.addEventListener('input', () => generateHeadlines());
+        cfgReplaceHyphens.addEventListener('change', () => generateHeadlines());
+        cfgCasing.addEventListener('change', () => generateHeadlines());
+        tpl1.addEventListener('input', () => generateHeadlines());
+        tpl2.addEventListener('input', () => generateHeadlines());
+        tpl3.addEventListener('input', () => generateHeadlines());
+
+        // Clipboard extraction copy logic
+        copyExtractBtn.addEventListener('click', () => {
+            const textToCopy = cleanOutput.value;
+            if (!textToCopy) return;
+
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = textToCopy;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            try {
+                document.execCommand('copy');
+                showNotification("Extracted campaign labels copied!");
+            } catch (err) {
+                showNotification("Copy failed. Try manual copy selection.", false);
+            }
+            document.body.removeChild(tempTextArea);
+        });
+
+        // Clipboard headlines copy logic
+        copyHeadlinesBtn.addEventListener('click', () => {
+            const textToCopy = headlinesOutput.value;
+            if (!textToCopy) return;
+
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = textToCopy;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            try {
+                document.execCommand('copy');
+                showNotification("All ad headlines copied!");
+            } catch (err) {
+                showNotification("Copy failed.", false);
+            }
+            document.body.removeChild(tempTextArea);
+        });
+
+        // Export Headlines file download Action
+        dlHeadlinesBtn.addEventListener('click', () => {
+            const outputText = headlinesOutput.value;
+            if (!outputText) return;
+
+            const blob = new Blob([outputText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'generated_headlines.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showNotification("Headlines exported as text file!");
+        });
+
+        // Load Mock Data helper
+        const mockData = `sarb_m_ww_shari-lipi_sarb-anolipi_32100877_sarb-hearing-aids-with-goverment-discounts_all_purchase_value_both_18p_i-0_roas-0.80
+12.19
+32.38
+20.19
+165.63%
+0.2
+
+sarb_m_ww_shari-lipi_sarb-anolipi_31181165_sarb-biotechnology-jobs-in-switzerland-dab_all_purchase_value_both_18p_i-0_roas-0.80
+31.6
+51.25
+19.65
+62.18%
+0.83`;
+
+        loadExample.addEventListener('click', () => {
+            rawInput.value = mockData;
+            processOverlay.classList.remove('opacity-0', 'pointer-events-none');
+            runExtraction();
+            showNotification("Complex dummy tracks loaded.");
+        });
+
+        clearInput.addEventListener('click', () => {
+            rawInput.value = "";
+            cleanOutput.value = "";
+            headlinesOutput.value = "";
+            updateStats(0, 0);
+            toggleExtractActions(false);
+            toggleHeadlineActions(false);
+            processOverlay.classList.add('opacity-0', 'pointer-events-none');
+            showNotification("Canvas reset.", true);
+        });
+    </script>
+</body>
+</html>
